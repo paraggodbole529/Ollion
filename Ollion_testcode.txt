@@ -1,0 +1,173 @@
+
+Question:
+Part 1: Front-End Automation Testing:
+Work-flow
+● Open a browser of your choice say Mozilla Firefox or Chrome
+● Navigate to StackOverflow (https://stackoverflow.com/)
+● Go to the “Browse Questions” section.
+● Click on the “Users” in the left section.
+● Click on “Editors”
+● Get the user name which has the max number of edits count on the second page (pagination).
+○ (Display “User name”, “location” and “edits” Count of that particular user in the result)
+Expected Deliverable
+● Write an automation script using Selenium WebDriver.
+● The method/script has to be runnable by us to ensure validity.
+● Should have documentation, steps to execute and comments.
+● Should cover the test cases.
+● Please generate an output in any reporting format for test result.
+
+Solutions:
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+
+def get_max_edits_user(users):
+    max_edits = -1
+    max_edits_user = None
+
+    for user in users:
+        edits_count = int(user.find_element(By.CLASS_NAME, "reputation").text.replace(",", ""))
+        if edits_count > max_edits:
+            max_edits = edits_count
+            max_edits_user = user
+
+    return max_edits_user
+
+# Set the path to the WebDriver executable
+driver_path = "path/to/chromedriver.exe"
+
+# Open Chrome browser
+driver = webdriver.Chrome(executable_path=driver_path)
+
+# Navigate to StackOverflow
+driver.get("https://stackoverflow.com/")
+
+# Go to "Browse Questions" section
+driver.find_element(By.XPATH, "//a[contains(text(),'Browse Questions')]").click()
+
+# Click on "Users" in the left section
+driver.find_element(By.XPATH, "//a[contains(text(),'Users')]").click()
+
+# Click on "Editors"
+driver.find_element(By.XPATH, "//a[contains(text(),'Editors')]").click()
+
+# Get the user with the max edits count on the second page (pagination)
+users_on_second_page = driver.find_elements(By.CLASS_NAME, "user-info")
+max_edits_user = get_max_edits_user(users_on_second_page)
+
+# Display user name, location, and edits count
+if max_edits_user is not None:
+    print("User Name:", max_edits_user.find_element(By.CLASS_NAME, "user-details").text)
+    print("Location:", max_edits_user.find_element(By.CLASS_NAME, "user-location").text)
+    print("Edits Count:", max_edits_user.find_element(By.CLASS_NAME, "reputation").text)
+else:
+    print("No user found.")
+
+# Close the browser
+driver.quit()
+
+
+----------------------------------------------------------------
+Question:
+Part 2: API Testing
+Work-flow
+● Generate a StackExchange API token (create a StackOverflow account if not created
+before). Refer - https://api.stackexchange.com/docs/authentication
+● Write API level tests using a framework and language of your choice (eg. Chai, Mocha, vcr,
+frisby) for StackExchange badges API.
+● Write test cases for each Badge API (ids, recipients, tags). Refer -
+https://api.stackexchange.com/docs#:~:text=article.%20auth%20required-,Badges,-badges
+● Test cases should cover all possible positive, negative, and corner cases. For instance,
+Suppose we need to test a function that calculates the distance between two points on our
+planet. The input of the function is in degrees: (latitudeTo, longitudeTo ,latitudeFrom,
+longitudeFrom)
+So the possible test cases would be
+○ Positive test cases:
+■ A couple of points anywhere on the map.
+● From Pune to Mumbai (18.520430, 73.856743, 19.075983, 72.877655)
+● From Delhi to Jaipur (28.704060, 77.102493, 26.912434, 75.787270)
+○ Negative test cases
+■ Latitude is supposed to be defined in exactly [90, -90] degree range and
+Longitude is supposed to be defined in exactly [180, -180].
+■ Invalid values for latitudes and longitudes are negative test cases.
+● (666, 0, 234, 3455)
+● (333,3333,333,333)
+○ Edge test cases
+■ All the points near zero. Like - (0.01, 0.23, 0.45, 0.21)
+■ Distance from one pole to another
+Expected Deliverable
+● Test cases should cover testing for bad inputs, status codes, response data types
+● Provide documentation and steps to execute the test cases.
+● JUnit/TAP or any reporting format for test output results
+
+Solutions:
+pom.xml
+<dependencies>
+    <dependency>
+        <groupId>io.rest-assured</groupId>
+        <artifactId>rest-assured</artifactId>
+        <version>4.4.0</version>
+        <scope>test</scope>
+    </dependency>
+    <!-- Add other dependencies as needed -->
+</dependencies>
+
+
+import io.restassured.RestAssured;
+import io.restassured.response.Response;
+import org.junit.jupiter.api.Test;
+import static io.restassured.RestAssured.given;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class StackExchangeAPITests {
+
+    private static final String BASE_URL = "https://api.stackexchange.com/2.3";
+
+    @Test
+    public void testGetBadgeById() {
+        int badgeId = 1;
+        Response response = given()
+            .param("site", "stackoverflow")
+        .when()
+            .get(BASE_URL + "/badges/" + badgeId)
+        .then()
+            .statusCode(200)
+            .extract()
+            .response();
+        assertNotNull(response);
+        assertEquals("gold", response.path("items.type"));
+    }
+
+    @Test
+    public void testGetBadgesByRecipients() {
+        String recipients = "12345,67890";
+        Response response = given()
+            .param("site", "stackoverflow")
+            .param("recipients", recipients)
+        .when()
+            .get(BASE_URL + "/badges/recipients")
+        .then()
+            .statusCode(200)
+            .extract()
+            .response();
+        assertNotNull(response);
+        assertTrue(response.path("items.size()") > 0);
+    }
+
+    @Test
+    public void testGetBadgesByTags() {
+        String tags = "java,rest-assured";
+        Response response = given()
+            .param("site", "stackoverflow")
+            .param("tags", tags)
+        .when()
+            .get(BASE_URL + "/badges/tags")
+        .then()
+            .statusCode(200)
+            .extract()
+            .response();
+        assertNotNull(response);
+        assertTrue(response.path("items.size()") > 0);
+       
+    }
+}
